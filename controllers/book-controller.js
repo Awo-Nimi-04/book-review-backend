@@ -7,14 +7,18 @@ const User = require("../models/user-model");
 const getAllBooks = async (req, res, next) => {
   let result;
   try {
-    result = await Book.find();
+    result = await Book.find().populate("creatorID", "firstName lastName");
   } catch (err) {
     return next(
-      new HttpError("Something went rong. Could not retrieve books.")
+      new HttpError("Something went wrong. Could not retrieve books.")
     );
   }
-  res.json({ result: result.map((book) => book.toObject({ getters: true })) });
+
+  res.json({ 
+    posts: result.map((book) => book.toObject({ getters: true })) 
+  });
 };
+
 
 const getBookByID = async (req, res, next) => {
   const { bookId } = req.params;
@@ -29,16 +33,27 @@ const getBookByID = async (req, res, next) => {
 
 const getBookByUserID = async (req, res, next) => {
   const { userID } = req.params;
+  const currentUserId = req.userData.userId;
+
   let userBooks;
   try {
     userBooks = await Book.find({ creatorID: userID });
   } catch (err) {
-    return new HttpError("Something went wrong. Could not find books.");
+    return next(
+      new HttpError("Something went wrong. Could not find books.", 500)
+    );
   }
 
-  res.json({
-    books: userBooks.map((book) => book.toObject({ getters: true })),
+  const booksWithLikeStatus = userBooks.map((book) => {
+    const bookObj = book.toObject({ getters: true });
+    bookObj.likedByUser = book.likes.some(
+      (id) => id.toString() === currentUserId.toString()
+    );
+    bookObj.totalLikes = book.likes.length;
+    return bookObj;
   });
+
+  res.json({ books: booksWithLikeStatus });
 };
 
 const createBook = async (req, res, next) => {
@@ -162,9 +177,44 @@ const deleteBook = async (req, res, next) => {
   res.json({ message: "Deleted successfully" });
 };
 
+const likeBook = async (req, res, next) => {
+  const bookId = req.params.bookId;
+  const userId = req.userData.userId;
+
+  try {
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return next(new HttpError("Book not found", 404));
+    }
+
+    const hasLiked = book.likes.includes(userId);
+
+    if (hasLiked) {
+      // Unlike it
+      book.likes = book.likes.filter(
+        (id) => id.toString() !== userId.toString()
+      );
+    } else {
+      // Like it
+      book.likes.push(userId);
+    }
+
+    await book.save();
+
+    res.status(200).json({
+      message: hasLiked ? "Book unliked" : "Book liked",
+      totalLikes: book.likes.length,
+      likedByUser: !hasLiked,
+    });
+  } catch (err) {
+    return next(new HttpError("Failed to like/unlike book", 500));
+  }
+};
+
 exports.createBook = createBook;
 exports.getAllBooks = getAllBooks;
 exports.getBookByID = getBookByID;
 exports.getBookByUserID = getBookByUserID;
 exports.updateBook = updateBook;
 exports.deleteBook = deleteBook;
+exports.likeBook = likeBook;

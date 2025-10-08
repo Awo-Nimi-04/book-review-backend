@@ -9,6 +9,7 @@ const bookSchema = new Schema({
   review: { type: String, required: true },
   genre: { type: String, required: true },
   creatorID: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
+  likes: [{ type: mongoose.Types.ObjectId, ref: "User" }],
 });
 
 module.exports = mongoose.model("Book", bookSchema);

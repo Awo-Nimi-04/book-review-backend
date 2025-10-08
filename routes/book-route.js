@@ -11,18 +11,20 @@ const {
   createBook,
   updateBook,
   deleteBook,
+  likeBook,
 } = require("../controllers/book-controller");
 
 //getAllBooks
 router.get("/", getAllBooks);
 
-//getBookByID
-router.get("/:bookId", getBookByID);
+router.use(checkAuth);
+
 
 //getBookByUserID
 router.get("/user/:userID", getBookByUserID);
 
-router.use(checkAuth);
+//getBookByID
+router.get("/:bookId", getBookByID);
 
 //createBook
 router.post(
@@ -36,6 +38,8 @@ router.post(
   ],
   createBook
 );
+
+router.patch("/like/:bookId", likeBook);
 
 router.patch(
   "/:bookId",

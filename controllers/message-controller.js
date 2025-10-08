@@ -121,6 +121,32 @@ const getChatList = async (req, res, next) => {
           },
         },
       },
+
+      // Lookup user info for the otherUser
+      {
+        $lookup: {
+          from: "users", // collection name in MongoDB
+          localField: "_id", // _id from the group = otherUserId
+          foreignField: "_id", // match against user's _id
+          as: "otherUserInfo",
+        },
+      },
+
+      // Unwind since lookup returns an array
+      { $unwind: "$otherUserInfo" },
+
+      // Project only the fields we want from user
+      {
+        $project: {
+          lastMessage: 1,
+          lastMessageTime: 1,
+          unreadCount: 1,
+          otherUserId: "$_id",
+          firstName: "$otherUserInfo.firstName",
+          lastName: "$otherUserInfo.lastName",
+        },
+      },
+
       // Sort the conversations by lastMessageTime descending
       // so the most recently active conversations appear first, like WhatsApp.
       { $sort: { lastMessageTime: -1 } },
