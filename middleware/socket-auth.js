@@ -7,7 +7,7 @@ function socketAuth(socket, next) {
       return next(new Error("Authentication error: Token missing"));
     }
 
-    const decoded = jwt.verify(token, "supersecret_dont_share");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     socket.user = { userId: decoded.userId };
     next();
   } catch (err) {

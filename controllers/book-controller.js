@@ -7,18 +7,20 @@ const User = require("../models/user-model");
 const getAllBooks = async (req, res, next) => {
   let result;
   try {
-    result = await Book.find().populate("creatorID", "firstName lastName");
+    result = await Book.find().populate(
+      "creatorID",
+      "firstName lastName image"
+    );
   } catch (err) {
     return next(
       new HttpError("Something went wrong. Could not retrieve books.")
     );
   }
 
-  res.json({ 
-    posts: result.map((book) => book.toObject({ getters: true })) 
+  res.json({
+    posts: result.map((book) => book.toObject({ getters: true })),
   });
 };
-
 
 const getBookByID = async (req, res, next) => {
   const { bookId } = req.params;
@@ -35,12 +37,19 @@ const getBookByUserID = async (req, res, next) => {
   const { userID } = req.params;
   const currentUserId = req.userData.userId;
 
-  let userBooks;
+  let userBooks, user;
   try {
     userBooks = await Book.find({ creatorID: userID });
+
+    user = await User.findById(userID).select(
+      "firstName lastName username image"
+    );
+    if (!user) {
+      return next(new HttpError("User not found", 404));
+    }
   } catch (err) {
     return next(
-      new HttpError("Something went wrong. Could not find books.", 500)
+      new HttpError("Something went wrong. Could not find books or user.", 500)
     );
   }
 
@@ -53,7 +62,15 @@ const getBookByUserID = async (req, res, next) => {
     return bookObj;
   });
 
-  res.json({ books: booksWithLikeStatus });
+  res.json({
+    user: {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      username: user.username,
+      image: user.image,
+    },
+    books: booksWithLikeStatus,
+  });
 };
 
 const createBook = async (req, res, next) => {
@@ -174,7 +191,7 @@ const deleteBook = async (req, res, next) => {
     );
   }
 
-  res.json({ message: "Deleted successfully" });
+  res.status(200).json({ message: "Deleted successfully" });
 };
 
 const likeBook = async (req, res, next) => {
@@ -211,6 +228,32 @@ const likeBook = async (req, res, next) => {
   }
 };
 
+const searchBooks = async (req, res, next) => {
+  const { q, genre, author } = req.query;
+
+  const filter = {};
+
+  if (q) {
+    filter.title = { title: { $regex: q, $options: "i" } };
+  }
+
+  if (genre) filter.genre = { $regex: genre, $options: "i" };
+  if (author) filter.author = { $regex: author, $options: "i" };
+
+  try {
+    const books = await Book.find(filter).populate(
+      "creatorID",
+      "firstName lastName image"
+    );
+
+    res.json({
+      books: books.map((book) => book.toObject({ getters: true })),
+    });
+  } catch (error) {
+    return next(new HttpError("Could not perform search. Try again.", 500));
+  }
+};
+
 exports.createBook = createBook;
 exports.getAllBooks = getAllBooks;
 exports.getBookByID = getBookByID;
@@ -218,3 +261,4 @@ exports.getBookByUserID = getBookByUserID;
 exports.updateBook = updateBook;
 exports.deleteBook = deleteBook;
 exports.likeBook = likeBook;
+exports.searchBooks = searchBooks;

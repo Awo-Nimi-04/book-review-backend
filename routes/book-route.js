@@ -12,13 +12,15 @@ const {
   updateBook,
   deleteBook,
   likeBook,
+  searchBooks,
 } = require("../controllers/book-controller");
 
 //getAllBooks
 router.get("/", getAllBooks);
 
-router.use(checkAuth);
+router.get("/search", searchBooks);
 
+router.use(checkAuth);
 
 //getBookByUserID
 router.get("/user/:userID", getBookByUserID);

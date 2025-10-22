@@ -8,7 +8,7 @@ const getAllUsers = async (req, res, next) => {
   let users;
   try {
     //both ways help filter out password
-    users = await User.find({}, "email firstName lastName books image");
+    users = await User.find({}, "email firstName lastName username books image");
     // users = User.find({}, "-password");
   } catch (err) {
     return next(
@@ -131,6 +131,72 @@ const login = async (req, res, next) => {
   });
 };
 
+const searchUsers = async (req, res, next) => {
+  const q = req.query.q || "";
+
+  try {
+    const filter = q.trim()
+      ? {
+          $or: [
+            { firstName: { $regex: q, $options: "i" } },
+            { lastName: { $regex: q, $options: "i" } },
+            { username: { $regex: q, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const users = await User.find(filter).select("books username image _id");
+    res.status(200).json({ users });
+  } catch (error) {
+    return next(new HttpError("Search failed. Try again later", 500));
+  }
+};
+
+
+const updateProfilePicture = async (req, res, next) => {
+  const userId = req.userData.userId;
+
+  if (!req.file || !req.file.path) {
+    return next(new HttpError("No image provided.", 422));
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) return next(new HttpError("No user found.", 404));
+
+    user.image = req.file.path;
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile picture updated successfully!",
+      imageUrl: user.image,
+    });
+  } catch (err) {
+    return next(new HttpError("Could not update profile picture.", 500));
+  }
+};
+
+const removeProfilePicture = async (req, res, next) => {
+  const userId = req.userData.userId;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) return next(new HttpError("No user found.", 404));
+
+    user.image = null;
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile picture removed successfully!",
+    });
+  } catch (err) {
+    return next(new HttpError("Could not remove profile picture.", 500));
+  }
+};
+
 exports.getAllUsers = getAllUsers;
 exports.signup = signup;
 exports.login = login;
+exports.updateProfilePicture = updateProfilePicture;
+exports.removeProfilePicture = removeProfilePicture;
+exports.searchUsers = searchUsers;

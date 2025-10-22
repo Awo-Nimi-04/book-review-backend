@@ -1,4 +1,5 @@
 const express = require("express");
+require("dotenv").config();
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const http = require("http");
@@ -42,8 +43,7 @@ app.use((error, req, res, next) => {
     .json({ message: error.message || "An error occured" });
 });
 
-const dbUrl =
-  "mongodb+srv://nimi2004div:Rashford03.@cluster0.pgzye.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const dbUrl = process.env.MONGO_URL;
 
 const server = http.createServer(app);
 
@@ -57,11 +57,8 @@ const io = new Server(server, {
 io.use(socketAuth);
 
 io.on("connection", (socket) => {
-  const userId = socket.user.userId
-  console.log(
-    `User ${userId} connected with socket ${socket.id}`,
-    socket.id
-  );
+  const userId = socket.user.userId;
+  console.log(`User ${userId} connected with socket ${socket.id}`, socket.id);
 
   socket.join(userId.toString());
 
@@ -93,7 +90,7 @@ const connectToDB = async () => {
   try {
     await mongoose.connect(dbUrl);
     console.log("Connected to database successfully.");
-    server.listen(8000, () => {
+    server.listen(process.env.PORT, () => {
       console.log("Server listening on port 8000...");
     });
   } catch (err) {
