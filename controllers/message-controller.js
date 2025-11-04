@@ -144,6 +144,7 @@ const getChatList = async (req, res, next) => {
           otherUserId: "$_id",
           firstName: "$otherUserInfo.firstName",
           lastName: "$otherUserInfo.lastName",
+          image: "$otherUserInfo.image",
         },
       },
 

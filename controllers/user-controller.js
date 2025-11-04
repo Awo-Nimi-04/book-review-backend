@@ -8,7 +8,10 @@ const getAllUsers = async (req, res, next) => {
   let users;
   try {
     //both ways help filter out password
-    users = await User.find({}, "email firstName lastName username books image");
+    users = await User.find(
+      {},
+      "email firstName lastName username books image"
+    );
     // users = User.find({}, "-password");
   } catch (err) {
     return next(
@@ -151,7 +154,6 @@ const searchUsers = async (req, res, next) => {
     return next(new HttpError("Search failed. Try again later", 500));
   }
 };
-
 
 const updateProfilePicture = async (req, res, next) => {
   const userId = req.userData.userId;

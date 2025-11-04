@@ -234,7 +234,7 @@ const searchBooks = async (req, res, next) => {
   const filter = {};
 
   if (q) {
-    filter.title = { title: { $regex: q, $options: "i" } };
+    filter.title = { $regex: q, $options: "i" };
   }
 
   if (genre) filter.genre = { $regex: genre, $options: "i" };
