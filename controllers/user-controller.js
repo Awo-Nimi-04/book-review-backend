@@ -30,7 +30,8 @@ const signup = async (req, res, next) => {
       new HttpError("Invalid credentials. Could not create user.", 422)
     );
   }
-  const { firstName, lastName, email, password, profilePic } = req.body;
+  const { firstName, lastName, email, username, password, profilePic } =
+    req.body;
 
   let existingUser;
   try {
@@ -53,6 +54,7 @@ const signup = async (req, res, next) => {
     firstName,
     lastName,
     email,
+    username,
     image: profilePic,
     password: hashedPassword,
     books: [],
@@ -83,7 +85,7 @@ const signup = async (req, res, next) => {
     firstName: firstName,
     lastName: lastName,
     token: token,
-    username: `${newUser.firstName} ${newUser.lastName.slice(0, 1)}`,
+    username: username,
   });
 };
 
@@ -196,9 +198,39 @@ const removeProfilePicture = async (req, res, next) => {
   }
 };
 
+const updateUsername = async (req, res, next) => {
+  const userId = req.userData.userId;
+  const { newUsername } = req.body;
+  try {
+    if (!newUsername || newUsername.trim() === "") {
+      return res.status(400).json({ message: "Username cannot be empty" });
+    }
+
+    const existing = await User.findOne({ username: newUsername });
+    if (existing) {
+      return res.status(409).json({ message: "Username already taken" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { username: newUsername },
+      { new: true }
+    ).select("-password");
+
+    return res.status(200).json({
+      message: "Username updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating username:", error);
+    return next(new HttpError("Server error", 500));
+  }
+};
+
 exports.getAllUsers = getAllUsers;
 exports.signup = signup;
 exports.login = login;
 exports.updateProfilePicture = updateProfilePicture;
 exports.removeProfilePicture = removeProfilePicture;
 exports.searchUsers = searchUsers;
+exports.updateUsername = updateUsername;

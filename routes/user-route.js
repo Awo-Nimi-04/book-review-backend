@@ -8,6 +8,7 @@ const {
   updateProfilePicture,
   removeProfilePicture,
   searchUsers,
+  updateUsername,
 } = require("../controllers/user-controller");
 const checkAuth = require("../middleware/check-auth");
 const upload = require("../middleware/file-upload");
@@ -24,7 +25,6 @@ router.post(
     check("username").not().isEmpty(),
     check("email").normalizeEmail().isEmail(),
     check("password").isLength({ min: 6 }),
-    check("profilePic").not().isEmpty(),
   ],
   signup
 );
@@ -36,5 +36,7 @@ router.use(checkAuth);
 router.patch("/profile-picture", upload.single("image"), updateProfilePicture);
 
 router.patch("/remove-picture", removeProfilePicture);
+
+router.patch("/update-username", updateUsername);
 
 module.exports = router;

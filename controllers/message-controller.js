@@ -50,11 +50,16 @@ const getConversation = async (req, res, next) => {
     // Mark unread messages sent to loggedInUser by otherUser as read
     await Message.updateMany(
       {
-        senderID: otherUser,
-        receiverID: authUser,
+        senderID: otherUserId,
+        receiverID: req.userData.userId,
         read: false,
       },
-      { $set: { read: true } }
+      {
+        $set: {
+          read: true,
+          readAt: new Date(),
+        },
+      }
     );
 
     const messages = await Message.find({
@@ -89,6 +94,7 @@ const getChatList = async (req, res, next) => {
           createdAt: 1,
           senderID: 1,
           receiverID: 1,
+          readAt: 1,
           otherUser: {
             $cond: [{ $eq: ["$senderID", user] }, "$receiverID", "$senderID"],
           },
@@ -141,6 +147,7 @@ const getChatList = async (req, res, next) => {
           lastMessage: 1,
           lastMessageTime: 1,
           unreadCount: 1,
+          readAt: 1,
           otherUserId: "$_id",
           firstName: "$otherUserInfo.firstName",
           lastName: "$otherUserInfo.lastName",
